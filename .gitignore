@@ -1,0 +1,26 @@
+# --- Project Specific ---
+# Virtual Environment
+venv/
+
+# Environment Variables
+.env
+
+# Uploads/User-generated content
+uploads/
+
+# Compiled Python files
+*.pyc
+_pycache_/
+
+# Python runtime specific files (e.g. if you only want the executable ignored)
+*.exe
+
+# --- Editor/OS specific ---
+# Visual Studio Code
+.vscode/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db

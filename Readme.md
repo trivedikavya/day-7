@@ -1,53 +1,44 @@
-# AQUA  - 30 Day AI Voice Agent Challenge
+# DAY-1 🌊 AQUA - AI Voice Conversational Agent
 
-This repository documents my journey through the 30-Day AI Voice Agent Challenge by Murf AI. The goal is to build a fully functional AI-powered voice companion from scratch.
+AQUA is a fully interactive voice conversational agent that runs locally on your machine.  
+It listens to your voice, "thinks" using Google's advanced Gemini AI, and replies with a realistic human voice.
 
-## 🚀 About The Project
+It acts like a real-time phone call or voice assistant (similar to Siri or ChatGPT Voice Mode).
 
-AQUA  is an AI-powered voice agent. This project is being built incrementally over 30 days, with each day focusing on a new task or feature.
+---
 
-### Built With
+## 🚀 Features
 
-*   **Backend:** [Python](https://www.python.org/) with [FastAPI](https://fastapi.tiangolo.com/)
-*   **Frontend:** HTML, CSS, [JavaScript](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
-*   **Styling:** [Tailwind CSS](https://tailwindcss.com/) (via CDN)
+- 🎙️ **Speech-to-Text (Ears):** Uses AssemblyAI to transcribe user speech accurately.
+- 🧠 **AI Intelligence (Brain):** Powered by Google Gemini 2.0 Flash for incredibly fast, natural, and concise responses.
+- 🗣️ **Text-to-Speech (Mouth):** Uses Murf AI to generate high-quality, life-like vocal responses.
+- ⚡ **Real-time Conversation:** Interactive UI with a "Push-to-Talk" mechanism.
+- 🔒 **Local Deployment:** Runs on your local machine using Python FastAPI.
 
-## 🏁 Getting Started
+---
 
-To get a local copy up and running, follow these simple steps.
+## 🛠️ Tech Stack
 
-### Prerequisites
+### Backend
+- Python 3.12+
+- FastAPI
+- Uvicorn
 
-*   Python 3.8+
-*   Node.js and npm (optional, for frontend package management)
+### Frontend
+- HTML5
+- Tailwind CSS
+- Vanilla JavaScript
 
-### Installation
+### APIs Used
+- Google Gemini API (LLM)
+- AssemblyAI API (Transcription)
+- Murf AI API (Voice Generation)
 
-1.  **Clone the repo**
-    ```sh
-    git clone https://github.com/Jaimin2687/Murf_AI.git
-    cd MURF_AI
-    ```
+---
 
-2.  **Backend Setup**
-    ```sh
-    # Navigate to the backend directory
-    cd backend
+## 📋 Prerequisites
 
-    # Create and activate a virtual environment
-    python3 -m venv venv
-    source venv/bin/activate
+### Required Software
+- Python **3.12 or 3.11** (Highly Recommended)  
+❗ **Do NOT use Python 3.14** — it causes compatibility issues 
 
-    # Install Python dependencies
-    pip install -r requirement.txt
-
-    # Run the FastAPI server
-    uvicorn main:app --reload
-    ```
-    The backend server will be running at `http://localhost:5000`.
-
-3.  **Frontend Setup**
-    The frontend is located in the `frontend/` directory. You can open the `index.html` file with a live server extension in your code editor (like VS Code's "Live Server") to view the application.
-
-
-Happy Coding! 🐾

@@ -5,24 +5,24 @@ import requests
 import json
 from models import TextToSpeechRequest
 from dotenv import load_dotenv
+import google.generativeai as genai
+import assemblyai as aai
 
 # Load environment variables
 load_dotenv()
 
 router = APIRouter()
 
+# 1. CONFIGURE GOOGLE GEMINI (The Brain)
+genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+model = genai.GenerativeModel('gemini-2.0-flash')
+
 # Health check
 @router.get("/health")
 async def health_check():
     return HTMLResponse(content="<h1>Service is running fully fit 📈 </h1>", status_code=200)
 
-# Welcome route
-@router.get("/")
-async def serve_index():
-    message = {"message": "Welcome to the FastAPI AI-Powered Voice Agent application!"}
-    return JSONResponse(content=message, status_code=200)
-
-# Murf AI TTS Generation
+# 2. STANDARD TTS ROUTE (For the "Hello" message)
 @router.post("/server")
 async def server(request: TextToSpeechRequest):
     MURF_API_KEY = os.getenv('MURF_AI_API_KEY')
@@ -35,7 +35,8 @@ async def server(request: TextToSpeechRequest):
         "Content-Type": "application/json",
         "Accept": "application/json",
     }
-
+    
+    # We force the voice settings here for consistency
     data = {
         "text": request.text,
         "voice_id": "en-UK-ruby",
@@ -45,50 +46,69 @@ async def server(request: TextToSpeechRequest):
 
     try:
         response = requests.post(endpoint, headers=headers, data=json.dumps(data))
-        audio_url = response.json()['audioFile']
-        return JSONResponse(content={"audioUrl": audio_url}, status_code=200)
-    except requests.exceptions.RequestException as e:
-        return JSONResponse(content={"error": str(e)}, status_code=500)
-    except json.JSONDecodeError:
-        return JSONResponse(content={"error": "Failed to decode JSON response"}, status_code=500)
-
-# Upload Audio File
-@router.post("/upload-audio")
-async def upload_audio(file: UploadFile = File(...)):
-    try:
-        upload_dir = "uploads"
-        os.makedirs(upload_dir, exist_ok=True)
-
-        file_location = os.path.join(upload_dir, file.filename)
-        with open(file_location, "wb") as f:
-            f.write(await file.read())
-
-        return {
-            "filename": file.filename,
-            "content_type": file.content_type,
-            "size": os.path.getsize(file_location)
-        }
+        response_data = response.json()
+        if 'audioFile' in response_data:
+            return JSONResponse(content={"audioUrl": response_data['audioFile']}, status_code=200)
+        else:
+            return JSONResponse(content={"error": "Murf API Error", "details": str(response_data)}, status_code=500)
     except Exception as e:
-        return JSONResponse(status_code=500, content={"error": str(e)})
+        return JSONResponse(content={"error": str(e)}, status_code=500)
 
-#  Transcribe audio using AssemblyAI (Day 6)
-@router.post("/transcribe/file")
-async def transcribe_file(file: UploadFile = File(...)):
+# 3. CONVERSATION ROUTE (Listen -> Think -> Speak)
+@router.post("/chat-with-voice")
+async def chat_with_voice(file: UploadFile = File(...)):
     try:
-        import assemblyai as aai
-
-        # Load API key from .env
+        # A. SETUP KEYS
         aai.settings.api_key = os.getenv("ASSEMBLYAI_API_KEY")
-        if not aai.settings.api_key:
-            return JSONResponse(content={"error": "ASSEMBLYAI_API_KEY not found"}, status_code=500)
+        murf_api_key = os.getenv('MURF_AI_API_KEY')
 
-        # Read the audio file
+        if not murf_api_key or not aai.settings.api_key:
+            return JSONResponse(content={"error": "Missing API Keys in .env"}, status_code=500)
+
+        # B. LISTEN (Transcribe User Audio)
+        print("🎧 Transcribing audio...")
         audio_data = await file.read()
-
-        # Transcribe audio
         transcriber = aai.Transcriber()
         transcript = transcriber.transcribe(audio_data)
+        user_text = transcript.text
+        
+        if not user_text:
+             return JSONResponse(content={"error": "Could not hear audio clearly"}, status_code=400)
 
-        return {"transcript": transcript.text}
+        # C. THINK (Ask Gemini)
+        print(f"🗣️ User said: {user_text}")
+        
+        # We instruct Gemini to be concise for voice conversations
+        prompt = f"You are AQUA, a friendly voice assistant. The user just said: '{user_text}'. Respond naturally and briefly (1-2 sentences) so it can be spoken out loud."
+        
+        chat_response = model.generate_content(prompt)
+        ai_reply = chat_response.text.replace("*", "") # Clean up asterisks for smoother speech
+        print(f"🤖 AQUA replies: {ai_reply}")
+
+        # D. SPEAK (Generate Audio with Murf)
+        murf_url = "https://api.murf.ai/v1/speech/generate"
+        murf_headers = {
+            "api-key": murf_api_key,
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        }
+        murf_data = {
+            "text": ai_reply,
+            "voice_id": "en-UK-ruby", 
+            "style": "Conversational",
+            "multiNativeLocale": "en-US"
+        }
+        
+        murf_res = requests.post(murf_url, headers=murf_headers, data=json.dumps(murf_data))
+        audio_url = murf_res.json().get('audioFile')
+
+        # E. RETURN EVERYTHING
+        return {
+            "user_transcript": user_text,
+            "ai_text": ai_reply,
+            "audio_url": audio_url
+        }
+
     except Exception as e:
+        print(f"Error: {e}")
         return JSONResponse(status_code=500, content={"error": str(e)})
