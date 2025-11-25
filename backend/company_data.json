@@ -1,0 +1,23 @@
+{
+  "company_name": "Zomato for Business",
+  "description": "Zomato is a technology platform that connects customers, restaurant partners and delivery partners, serving their multiple needs.",
+  "faqs": [
+    {
+      "question": "What is Zomato for Business?",
+      "answer": "It helps restaurants grow by listing them on our app, enabling online ordering, and providing table reservation management."
+    },
+    {
+      "question": "How much does it cost to list?",
+      "answer": "Listing your restaurant is free. We charge a commission on orders delivered through our platform, typically around 18-25% depending on the region."
+    },
+    {
+      "question": "Do you offer advertising?",
+      "answer": "Yes, Zomato Ads helps you boost visibility to customers searching for food in your area. You pay per click."
+    },
+    {
+      "question": "Who is this for?",
+      "answer": "This is perfect for restaurant owners, cloud kitchen operators, and cafe managers looking to increase their online sales."
+    }
+  ],
+  "lead_fields": ["name", "company_name", "role", "email", "team_size", "use_case", "timeline"]
+}

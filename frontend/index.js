@@ -6,43 +6,44 @@ document.addEventListener("DOMContentLoaded", () => {
   const statusText = document.getElementById("status-text");
   const agentAudio = document.getElementById("agent-audio");
 
-  const modeCard = document.getElementById("mode-card");
-  const dispMode = document.getElementById("disp-mode");
-  const dispTopic = document.getElementById("disp-topic");
-  const dispFeedback = document.getElementById("disp-feedback");
+  // CRM Fields
+  const crmName = document.getElementById("crm-name");
+  const crmCompany = document.getElementById("crm-company");
+  const crmRole = document.getElementById("crm-role");
+  const crmTeam = document.getElementById("crm-team");
+  const crmTimeline = document.getElementById("crm-timeline");
+  const crmUseCase = document.getElementById("crm-usecase");
 
   let mediaRecorder;
   let audioChunks = [];
   let isRecording = false;
 
   let currentState = {
-    mode: "menu",
-    topic_id: null,
-    feedback: ""
+    lead_info: {},
+    is_complete: false
   };
 
-  // --- START SESSION ---
+  // --- START CALL ---
   startConvBtn.addEventListener("click", async () => {
     startScreen.classList.add("hidden");
     conversationScreen.classList.remove("hidden");
-    statusText.textContent = "Class is starting... 🔔";
+    statusText.textContent = "Dialing Agent... 📞";
     
     try {
       const res = await axios.post("http://localhost:5000/start-session");
       if (res.data.audioUrl) {
         playAudio(res.data.audioUrl);
       } else {
-        // Fallback for visual only
         statusText.textContent = res.data.text;
         resetMicUI();
       }
     } catch (error) {
-      statusText.textContent = "Error connecting.";
+      statusText.textContent = "Call Failed.";
       console.error(error);
     }
   });
 
-  // --- MIC TOGGLE ---
+  // --- MIC LOGIC ---
   micToggleBtn.addEventListener("click", async () => {
     if (!isRecording) {
       try {
@@ -52,10 +53,10 @@ document.addEventListener("DOMContentLoaded", () => {
         mediaRecorder.ondataavailable = event => audioChunks.push(event.data);
         
         mediaRecorder.onstop = async () => {
-          statusText.textContent = "Tutor is thinking... 🤔";
+          statusText.textContent = "Agent is writing... 📝";
           micToggleBtn.innerHTML = "⏳";
           micToggleBtn.disabled = true;
-          micToggleBtn.className = "w-24 h-24 rounded-full bg-slate-200 flex items-center justify-center text-4xl text-slate-400";
+          micToggleBtn.className = "w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center text-3xl text-gray-400";
 
           const blob = new Blob(audioChunks, { type: 'audio/webm' });
           const formData = new FormData();
@@ -65,33 +66,31 @@ document.addEventListener("DOMContentLoaded", () => {
           try {
             const res = await axios.post("http://localhost:5000/chat-with-voice", formData);
 
+            // Update State & CRM UI
             if (res.data.updated_state) {
                 currentState = res.data.updated_state;
-                updateDisplay();
+                updateCRM(currentState.lead_info);
             }
 
-            // --- CRITICAL FIX: Handle Missing Audio ---
             if (res.data.audio_url) {
               playAudio(res.data.audio_url);
             } else {
-              console.warn("No audio returned. Displaying text only.");
-              statusText.textContent = "Audio failed (See Console). Tap to continue.";
-              resetMicUI(); // Forces the button to reset so you aren't stuck!
+              statusText.textContent = "No audio. Check console.";
+              resetMicUI();
             }
 
           } catch (err) {
             console.error(err);
-            statusText.textContent = "Connection error.";
+            statusText.textContent = "Connection drop.";
             resetMicUI();
           }
         };
 
         mediaRecorder.start();
         isRecording = true;
-        
         statusText.textContent = "Listening...";
         micToggleBtn.innerHTML = "⏹️"; 
-        micToggleBtn.className = "w-24 h-24 rounded-full bg-red-500 flex items-center justify-center text-4xl text-white pulse-ring shadow-lg";
+        micToggleBtn.className = "w-20 h-20 rounded-full bg-red-600 flex items-center justify-center text-3xl text-white pulse-ring shadow-lg";
 
       } catch (err) {
         alert("Microphone denied.");
@@ -103,36 +102,29 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  function updateDisplay() {
-    dispMode.textContent = currentState.mode;
-    dispTopic.textContent = currentState.topic_id || "None";
-    
-    modeCard.className = "w-full bg-white rounded-xl p-5 mb-8 border shadow-sm text-left transition-colors duration-500";
-    if (currentState.mode === 'learn') modeCard.classList.add('mode-learn');
-    else if (currentState.mode === 'quiz') modeCard.classList.add('mode-quiz');
-    else if (currentState.mode === 'teach_back') modeCard.classList.add('mode-teach_back');
-    else modeCard.classList.add('mode-menu');
-
-    if (currentState.feedback) {
-        dispFeedback.classList.remove("hidden");
-        dispFeedback.innerHTML = `<strong>Coach Note:</strong> ${currentState.feedback}`;
-    } else {
-        dispFeedback.classList.add("hidden");
-    }
+  function updateCRM(info) {
+    if (!info) return;
+    crmName.textContent = info.name || "-";
+    crmCompany.textContent = info.company_name || "-";
+    crmRole.textContent = info.role || "-";
+    crmTeam.textContent = info.team_size || "-";
+    crmTimeline.textContent = info.timeline || "-";
+    crmUseCase.textContent = info.use_case || "-";
   }
 
   function playAudio(url) {
     agentAudio.src = url;
-    statusText.textContent = "Tutor is speaking... 🗣️";
+    statusText.textContent = "Agent is speaking... 🗣️";
     agentAudio.play();
 
     agentAudio.onended = () => {
-      resetMicUI();
-    };
-    
-    agentAudio.onerror = () => {
-        statusText.textContent = "Audio playback error.";
+      if (currentState.is_complete) {
+        statusText.textContent = "Call Ended. Lead Saved. ✅";
+        micToggleBtn.innerHTML = "📞";
+        micToggleBtn.disabled = true;
+      } else {
         resetMicUI();
+      }
     };
   }
 
@@ -140,6 +132,6 @@ document.addEventListener("DOMContentLoaded", () => {
     statusText.textContent = "Tap to Reply";
     micToggleBtn.disabled = false;
     micToggleBtn.innerHTML = "🎙️";
-    micToggleBtn.className = "w-24 h-24 rounded-full bg-slate-100 flex items-center justify-center text-4xl shadow-inner transition-all duration-300 text-slate-500 hover:scale-105";
+    micToggleBtn.className = "w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center text-3xl text-gray-500 transition-all hover:bg-gray-200";
   }
 });
