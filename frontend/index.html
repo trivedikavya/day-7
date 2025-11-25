@@ -5,77 +5,79 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Wellness Companion 🌿</title>
+  <title>Active Recall Tutor 🎓</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
-    body { font-family: 'Quicksand', sans-serif; background: linear-gradient(135deg, #e0f2f1 0%, #b2dfdb 100%); }
-    .glass { background: rgba(255,255,255,0.9); border-radius: 24px; box-shadow: 0 8px 32px rgba(0,0,0,0.05); }
-    .pulse-ring { animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite; }
+    body { font-family: 'Outfit', sans-serif; background: #f8fafc; }
+    .glass { background: white; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.08); }
+    
+    .mode-menu { border-left: 6px solid #94a3b8; }
+    .mode-learn { border-left: 6px solid #3b82f6; } 
+    .mode-quiz { border-left: 6px solid #f59e0b; }  
+    .mode-teach_back { border-left: 6px solid #10b981; }
+
+    .pulse-ring { animation: pulse-ring 2s infinite; }
     @keyframes pulse-ring { 
-      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(45, 212, 191, 0.7); } 
-      70% { transform: scale(1); box-shadow: 0 0 0 20px rgba(45, 212, 191, 0); } 
-      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(45, 212, 191, 0); } 
+      0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.5); } 
+      70% { box-shadow: 0 0 0 20px rgba(59, 130, 246, 0); } 
+      100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); } 
     }
   </style>
 </head>
-<body class="min-h-screen flex flex-col items-center justify-center p-4">
+<body class="min-h-screen flex flex-col items-center justify-center p-6">
 
-  <div class="glass p-8 max-w-md w-full text-center transition-all duration-500 relative">
-    
-    <!-- Header -->
+  <div class="glass p-8 max-w-lg w-full text-center transition-all duration-300">
     <div class="mb-8">
-      <h1 class="text-3xl font-bold text-teal-800 mb-1">Wellness Check-in 🌿</h1>
-      <p class="text-teal-600 text-sm">Your Daily Mindful Companion</p>
+      <h1 class="text-3xl font-bold text-slate-800 mb-1">Active Recall Tutor 🎓</h1>
+      <p class="text-slate-500 text-sm">Learn • Quiz • Teach</p>
     </div>
 
     <!-- START SCREEN -->
     <div id="start-screen">
-      <div class="bg-teal-50 p-6 rounded-xl mb-8 text-left text-teal-800 text-sm border border-teal-100">
-        <p class="font-bold mb-2">👋 Ready to check in?</p>
-        <p class="mb-2">We'll talk about:</p>
-        <ul class="list-disc pl-4 space-y-1 text-teal-700">
-          <li>How you're feeling (Mood)</li>
-          <li>Your energy levels</li>
-          <li>One intention for today</li>
+      <div class="bg-slate-50 p-6 rounded-xl mb-8 text-left border border-slate-200 text-sm text-slate-700">
+        <p class="font-bold mb-2">📚 Available Topics:</p>
+        <ul class="list-disc pl-4 space-y-1 mb-4">
+          <li>Variables</li>
+          <li>Loops</li>
         </ul>
+        <p class="font-bold mb-2">🧠 Modes:</p>
+        <div class="grid grid-cols-3 gap-2 text-center text-xs font-semibold">
+          <div class="bg-blue-100 text-blue-700 p-2 rounded">LEARN<br>(Matthew)</div>
+          <div class="bg-amber-100 text-amber-700 p-2 rounded">QUIZ<br>(Alicia)</div>
+          <div class="bg-emerald-100 text-emerald-700 p-2 rounded">TEACH<br>(Ken)</div>
+        </div>
       </div>
-      <button id="start-conv-btn" class="w-full bg-teal-600 hover:bg-teal-700 text-white text-lg font-bold px-8 py-4 rounded-full shadow-lg transition-transform hover:scale-105">
-        Begin Session
+      <button id="start-conv-btn" class="w-full bg-slate-800 hover:bg-slate-900 text-white text-lg font-bold px-8 py-4 rounded-full shadow-lg transition-transform hover:scale-105">
+        Start Class
       </button>
     </div>
 
-    <!-- CONVERSATION SCREEN -->
+    <!-- SESSION SCREEN -->
     <div id="conversation-screen" class="hidden flex flex-col items-center">
-      
-      <!-- CHECK-IN CARD -->
-      <div class="w-full bg-white rounded-xl p-5 mb-8 border border-teal-100 shadow-sm text-left">
-        <h3 class="text-xs font-bold text-teal-400 uppercase tracking-wider mb-4">Today's Summary</h3>
-        <div class="space-y-3 text-sm">
-          <div class="flex justify-between items-center">
-            <span class="text-gray-500">Mood</span>
-            <span id="disp-mood" class="font-bold text-teal-800 px-3 py-1 bg-teal-50 rounded-full">-</span>
+      <div id="mode-card" class="w-full bg-white rounded-xl p-5 mb-8 border shadow-sm text-left mode-menu transition-colors duration-500">
+        <div class="flex justify-between items-start">
+          <div>
+            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Current Mode</p>
+            <h2 id="disp-mode" class="text-2xl font-bold text-slate-800 capitalize">Menu</h2>
           </div>
-          <div class="flex justify-between items-center">
-            <span class="text-gray-500">Energy</span>
-            <span id="disp-energy" class="font-bold text-teal-800 px-3 py-1 bg-teal-50 rounded-full">-</span>
+          <div class="text-right">
+            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Topic</p>
+            <h2 id="disp-topic" class="text-lg font-semibold text-slate-600">None</h2>
           </div>
-          <div class="pt-2">
-            <span class="text-gray-500 block mb-1">Intentions</span>
-            <div id="disp-goals" class="text-teal-900 font-medium pl-1">-</div>
-          </div>
+        </div>
+        <div id="disp-feedback" class="mt-4 pt-4 border-t border-dashed border-gray-200 text-sm text-gray-600 hidden">
+          Feedback: <span class="italic">...</span>
         </div>
       </div>
 
-      <!-- STATUS -->
-      <p id="status-text" class="text-lg font-medium text-teal-800 mb-6 h-6">Breath in...</p>
+      <p id="status-text" class="text-lg font-medium text-slate-600 mb-6 h-6">Tutor is ready...</p>
 
-      <!-- MIC BUTTON -->
-      <button id="mic-toggle-btn" class="w-20 h-20 rounded-full bg-teal-100 flex items-center justify-center text-3xl shadow-inner transition-all duration-300 text-teal-600">
+      <button id="mic-toggle-btn" class="w-24 h-24 rounded-full bg-slate-100 flex items-center justify-center text-4xl shadow-inner transition-all duration-300 text-slate-500">
         🎙️
       </button>
-      <p class="text-xs text-teal-400 mt-4 font-medium">Tap to Speak</p>
+      <p class="text-xs text-slate-400 mt-4 font-medium">Tap to Speak</p>
 
       <audio id="agent-audio" class="hidden"></audio>
     </div>

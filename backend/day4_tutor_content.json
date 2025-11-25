@@ -1,0 +1,14 @@
+[
+  {
+    "id": "variables",
+    "title": "Variables",
+    "summary": "In programming, a variable is like a container or a box that stores data. You give the box a name, like 'score' or 'username', and put a value inside it. This allows you to reference that value later in your code without remembering the exact data.",
+    "sample_question": "In your own words, why do we need variables instead of just using raw numbers?"
+  },
+  {
+    "id": "loops",
+    "title": "Loops",
+    "summary": "Loops are control structures that allow you to repeat a block of code multiple times. For example, instead of writing 'print hello' ten times, you can write a loop that runs ten times. The two most common types are 'for loops' (for a set number of times) and 'while loops' (until a condition is met).",
+    "sample_question": "What is the main difference between a 'for' loop and a 'while' loop?"
+  }
+]
