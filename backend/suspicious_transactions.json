@@ -1,0 +1,14 @@
+[
+  {
+    "id": "ALERT-8821",
+    "userName": "John",
+    "securityIdentifier": "12345",
+    "cardEnding": "4242",
+    "status": "fraudulent",
+    "transactionName": "ABC Industry (Alibaba)",
+    "transactionAmount": "\u00e2\u201a\u00b945,000",
+    "transactionTime": "03:15 AM",
+    "transactionCategory": "International E-commerce",
+    "transactionSource": "alibaba.com"
+  }
+]
