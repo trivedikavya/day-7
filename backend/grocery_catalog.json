@@ -1,0 +1,12 @@
+[
+  { "id": "101", "name": "Amul Taaza Milk", "price": 27, "category": "Dairy", "tags": ["milk", "dairy", "essential"] },
+  { "id": "102", "name": "Whole Wheat Bread", "price": 45, "category": "Bakery", "tags": ["bread", "toast", "sandwich"] },
+  { "id": "103", "name": "Farm Fresh Eggs (6pcs)", "price": 55, "category": "Dairy", "tags": ["eggs", "protein", "breakfast"] },
+  { "id": "104", "name": "Maggi Noodles", "price": 14, "category": "Snacks", "tags": ["noodles", "snack", "quick meal"] },
+  { "id": "105", "name": "Kissan Peanut Butter", "price": 160, "category": "Spreads", "tags": ["peanut butter", "spread", "sandwich", "protein"] },
+  { "id": "106", "name": "Barilla Penne Pasta", "price": 190, "category": "Pantry", "tags": ["pasta", "italian", "dinner"] },
+  { "id": "107", "name": "Arrabbiata Pasta Sauce", "price": 125, "category": "Pantry", "tags": ["sauce", "pasta", "italian"] },
+  { "id": "108", "name": "Amul Cheese Block", "price": 110, "category": "Dairy", "tags": ["cheese", "pasta", "sandwich", "pizza"] },
+  { "id": "109", "name": "Coca Cola (750ml)", "price": 40, "category": "Beverages", "tags": ["coke", "drink", "soda"] },
+  { "id": "110", "name": "Lays Classic Salted", "price": 20, "category": "Snacks", "tags": ["chips", "snack", "party"] }
+]

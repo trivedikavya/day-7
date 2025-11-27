@@ -6,25 +6,26 @@ document.addEventListener("DOMContentLoaded", () => {
   const statusText = document.getElementById("status-text");
   const agentAudio = document.getElementById("agent-audio");
 
-  // Status Badges
-  const dispVerif = document.getElementById("disp-verification");
-  const dispCase = document.getElementById("disp-case-status");
-  const connDot = document.getElementById("connection-dot");
+  // Cart UI
+  const cartList = document.getElementById("cart-list");
+  const cartTotal = document.getElementById("cart-total");
+  const checkoutBtn = document.getElementById("checkout-btn");
 
   let mediaRecorder;
   let audioChunks = [];
   let isRecording = false;
 
   let currentState = {
-    verification_stage: "unverified",
-    case_status: "pending"
+    cart: [],
+    total_price: 0,
+    is_complete: false
   };
 
-  // --- START SECURE CALL ---
+  // --- START ---
   startConvBtn.addEventListener("click", async () => {
     startScreen.classList.add("hidden");
     conversationScreen.classList.remove("hidden");
-    statusText.textContent = "Establishing Secure Line... 🔒";
+    statusText.textContent = "Opening Store... 🏪";
     
     try {
       const res = await axios.post("http://localhost:5000/start-session");
@@ -35,12 +36,12 @@ document.addEventListener("DOMContentLoaded", () => {
         resetMicUI();
       }
     } catch (error) {
-      statusText.textContent = "Connection Failed.";
+      statusText.textContent = "Failed to connect.";
       console.error(error);
     }
   });
 
-  // --- MIC LOGIC ---
+  // --- MIC ---
   micToggleBtn.addEventListener("click", async () => {
     if (!isRecording) {
       try {
@@ -50,10 +51,10 @@ document.addEventListener("DOMContentLoaded", () => {
         mediaRecorder.ondataavailable = event => audioChunks.push(event.data);
         
         mediaRecorder.onstop = async () => {
-          statusText.textContent = "Verifying... 🔐";
+          statusText.textContent = "Updating Cart... 🛒";
           micToggleBtn.innerHTML = "⏳";
           micToggleBtn.disabled = true;
-          micToggleBtn.className = "w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center text-3xl text-gray-400";
+          micToggleBtn.className = "w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center text-3xl text-gray-400";
 
           const blob = new Blob(audioChunks, { type: 'audio/webm' });
           const formData = new FormData();
@@ -63,32 +64,32 @@ document.addEventListener("DOMContentLoaded", () => {
           try {
             const res = await axios.post("http://localhost:5000/chat-with-voice", formData);
 
-            // Update State
+            // Update State & UI
             if (res.data.updated_state) {
                 currentState = res.data.updated_state;
-                updateSecurityUI();
+                renderCart(currentState.cart);
+                cartTotal.textContent = `₹${currentState.total_price}`;
             }
 
             if (res.data.audio_url) {
               playAudio(res.data.audio_url);
             } else {
-              statusText.textContent = "Agent response error.";
+              statusText.textContent = "No audio returned.";
               resetMicUI();
             }
 
           } catch (err) {
             console.error(err);
-            statusText.textContent = "Secure connection dropped.";
+            statusText.textContent = "Connection drop.";
             resetMicUI();
           }
         };
 
         mediaRecorder.start();
         isRecording = true;
-        
         statusText.textContent = "Listening...";
         micToggleBtn.innerHTML = "⏹️"; 
-        micToggleBtn.className = "w-20 h-20 rounded-full bg-red-600 flex items-center justify-center text-3xl text-white shadow-lg pulse-alert";
+        micToggleBtn.className = "w-24 h-24 rounded-full bg-green-500 flex items-center justify-center text-3xl text-white pulse-btn shadow-lg";
 
       } catch (err) {
         alert("Microphone denied.");
@@ -100,26 +101,27 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  function updateSecurityUI() {
-    // 1. Verification Badge
-    if (currentState.verification_stage === "verified") {
-        dispVerif.textContent = "VERIFIED ✅";
-        dispVerif.className = "font-bold text-green-600";
-    } else {
-        dispVerif.textContent = "PENDING ⚠️";
-        dispVerif.className = "font-bold text-yellow-600";
+  // Render Cart Items HTML
+  function renderCart(items) {
+    if (!items || items.length === 0) {
+        cartList.innerHTML = '<div class="text-center text-gray-400 mt-20 italic">Cart is empty</div>';
+        return;
     }
 
-    // 2. Case Status Badge
-    if (currentState.case_status === "safe") {
-        dispCase.textContent = "CLEARED ✅";
-        dispCase.className = "font-bold text-green-600";
-        connDot.className = "w-3 h-3 bg-green-500 rounded-full";
-    } else if (currentState.case_status === "fraudulent") {
-        dispCase.textContent = "BLOCKED ⛔";
-        dispCase.className = "font-bold text-red-600";
-        connDot.className = "w-3 h-3 bg-red-500 rounded-full";
-    }
+    cartList.innerHTML = items.map(item => `
+        <div class="cart-item py-3 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-gray-100 rounded flex items-center justify-center text-xs font-bold text-gray-500">
+                    x${item.qty}
+                </div>
+                <div>
+                    <p class="font-bold text-gray-800 text-sm">${item.name}</p>
+                    <p class="text-xs text-gray-500">₹${item.price} / unit</p>
+                </div>
+            </div>
+            <div class="font-bold text-gray-800">₹${item.price * item.qty}</div>
+        </div>
+    `).join("");
   }
 
   function playAudio(url) {
@@ -128,10 +130,12 @@ document.addEventListener("DOMContentLoaded", () => {
     agentAudio.play();
 
     agentAudio.onended = () => {
-      if (currentState.case_status !== "pending") {
-        statusText.textContent = "Case Closed. Connection Ended.";
-        micToggleBtn.innerHTML = "🔒";
+      if (currentState.is_complete) {
+        statusText.textContent = "Order Placed! ✅";
+        micToggleBtn.innerHTML = "🎉";
         micToggleBtn.disabled = true;
+        checkoutBtn.className = "w-full bg-green-600 text-white font-bold py-3 rounded-xl shadow-lg";
+        checkoutBtn.textContent = "Order Placed Successfully";
       } else {
         resetMicUI();
       }
@@ -139,9 +143,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function resetMicUI() {
-    statusText.textContent = "Tap to Verify";
+    statusText.textContent = "Tap to Add Items";
     micToggleBtn.disabled = false;
     micToggleBtn.innerHTML = "🎙️";
-    micToggleBtn.className = "w-20 h-20 rounded-full bg-blue-50 border-2 border-blue-100 flex items-center justify-center text-3xl text-blue-900 transition-all hover:bg-blue-100";
+    micToggleBtn.className = "w-24 h-24 rounded-full bg-yellow-100 flex items-center justify-center text-4xl text-yellow-600 transition-all hover:bg-yellow-200 hover:scale-105";
   }
 });

@@ -5,75 +5,76 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>HDFC Fraud Alert 🔒</title>
+  <title>Blinkit Voice 🛍️</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
-    body { font-family: 'Roboto', sans-serif; background: #002D62; } /* HDFC Blue */
-    .bank-card { background: white; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2); }
-    .status-badge { transition: all 0.3s ease; }
-    .pulse-alert { animation: pulse-red 2s infinite; }
-    @keyframes pulse-red { 
-      0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 
-      70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); } 
-      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } 
+    body { font-family: 'Poppins', sans-serif; background: #FFC107; } /* Blinkit Yellowish */
+    .app-card { background: white; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+    .cart-item { border-bottom: 1px solid #f3f4f6; }
+    .pulse-btn { animation: pulse-green 2s infinite; }
+    @keyframes pulse-green { 
+      0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); } 
+      70% { box-shadow: 0 0 0 15px rgba(16, 185, 129, 0); } 
+      100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } 
     }
   </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-4">
 
-  <div class="max-w-md w-full bank-card p-6 relative overflow-hidden">
-    <!-- Top Bar -->
-    <div class="flex justify-between items-center mb-6 border-b pb-4">
-      <div class="text-2xl font-bold text-blue-900">HDFC BANK</div>
-      <div class="flex items-center gap-2">
-        <div id="connection-dot" class="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-        <span class="text-xs font-bold text-red-600 uppercase tracking-wider">Fraud Alert</span>
-      </div>
-    </div>
-
-    <!-- START SCREEN -->
-    <div id="start-screen" class="text-center py-8">
-      <div class="bg-red-50 border border-red-100 rounded-lg p-4 mb-6">
-        <p class="text-red-800 font-semibold">⚠️ Suspicious Activity Detected</p>
-        <p class="text-red-600 text-sm mt-1">Please verify transaction #8821</p>
-      </div>
-      <button id="start-conv-btn" class="w-full bg-blue-800 hover:bg-blue-900 text-white font-bold py-4 rounded-lg shadow-lg transition-transform hover:scale-105">
-        Connect to Fraud Dept.
-      </button>
-    </div>
-
-    <!-- SESSION SCREEN -->
-    <div id="conversation-screen" class="hidden">
+  <div class="max-w-5xl w-full grid grid-cols-1 md:grid-cols-2 gap-6">
+    
+    <!-- LEFT: VOICE INTERFACE -->
+    <div class="app-card p-8 flex flex-col items-center justify-center text-center h-[500px] relative">
+      <div class="absolute top-6 left-6 font-bold text-yellow-600 text-xl tracking-tighter">blinkit</div>
       
-      <!-- Security Status -->
-      <div class="flex justify-between mb-6 text-sm">
-        <div>
-          <p class="text-gray-400 text-xs uppercase">Identity Verification</p>
-          <p id="disp-verification" class="font-bold text-gray-400">PENDING</p>
-        </div>
-        <div class="text-right">
-          <p class="text-gray-400 text-xs uppercase">Case Status</p>
-          <p id="disp-case-status" class="font-bold text-yellow-600">OPEN</p>
-        </div>
+      <div id="start-screen" class="w-full max-w-xs">
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">Groceries in Minutes</h1>
+        <p class="text-gray-500 mb-8 text-sm">Tap below to start your voice order.</p>
+        <button id="start-conv-btn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl shadow-lg transition-transform hover:scale-105">
+          Start Ordering
+        </button>
       </div>
 
-      <!-- Live Transcript / Status -->
-      <div class="bg-gray-50 rounded-lg p-4 mb-6 h-32 flex items-center justify-center text-center border">
-        <p id="status-text" class="text-lg text-gray-700 font-medium">Connecting securely...</p>
-      </div>
+      <div id="conversation-screen" class="hidden w-full flex flex-col items-center">
+        <div class="bg-gray-50 rounded-xl p-4 mb-8 w-full border border-gray-100 min-h-[100px] flex items-center justify-center">
+          <p id="status-text" class="text-lg text-gray-700 font-medium">Connecting...</p>
+        </div>
 
-      <!-- Controls -->
-      <div class="flex flex-col items-center">
-        <button id="mic-toggle-btn" class="w-20 h-20 rounded-full bg-blue-50 border-2 border-blue-100 flex items-center justify-center text-3xl text-blue-900 transition-all">
+        <button id="mic-toggle-btn" class="w-24 h-24 rounded-full bg-yellow-100 flex items-center justify-center text-4xl text-yellow-600 transition-all">
           🎙️
         </button>
-        <p class="text-xs text-gray-400 mt-3 font-medium">Tap to Verify</p>
+        <p class="text-xs text-gray-400 mt-4 font-semibold">Tap to Speak</p>
+        <audio id="agent-audio" class="hidden"></audio>
+      </div>
+    </div>
+
+    <!-- RIGHT: LIVE CART -->
+    <div class="app-card p-6 flex flex-col h-[500px]">
+      <div class="flex justify-between items-center mb-4 border-b pb-4">
+        <h2 class="text-xl font-bold text-gray-800">Your Cart 🛒</h2>
+        <span class="bg-green-100 text-green-700 text-xs px-3 py-1 rounded-full font-bold">10 MINS</span>
       </div>
       
-      <audio id="agent-audio" class="hidden"></audio>
+      <!-- Cart Items List (Scrollable) -->
+      <div id="cart-list" class="flex-1 overflow-y-auto pr-2 space-y-3">
+        <!-- Items will be injected here via JS -->
+        <div class="text-center text-gray-400 mt-20 italic">Cart is empty</div>
+      </div>
+
+      <!-- Total & Checkout -->
+      <div class="mt-4 pt-4 border-t">
+        <div class="flex justify-between items-center mb-4">
+          <span class="text-gray-500">Total Bill</span>
+          <span id="cart-total" class="text-2xl font-bold text-gray-800">₹0</span>
+        </div>
+        <button class="w-full bg-gray-200 text-gray-400 font-bold py-3 rounded-xl cursor-not-allowed" id="checkout-btn" disabled>
+          Order Placed
+        </button>
+      </div>
     </div>
+
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>

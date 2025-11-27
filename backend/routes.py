@@ -6,6 +6,7 @@ import json
 import google.generativeai as genai
 import assemblyai as aai
 from dotenv import load_dotenv
+from datetime import datetime
 
 # Load environment variables
 load_dotenv()
@@ -16,46 +17,29 @@ router = APIRouter()
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 model = genai.GenerativeModel('gemini-2.0-flash')
 
-# 2. LOAD TRANSACTION DATA
-DB_FILE = "suspicious_transactions.json"
-
-def get_active_case():
+# 2. LOAD CATALOG
+CATALOG_FILE = "grocery_catalog.json"
+def load_catalog():
     try:
-        with open(DB_FILE, "r") as f:
-            data = json.load(f)
-            # Find the first pending case
-            for case in data:
-                if case["status"] == "pending":
-                    return case
-            return data[0]
+        with open(CATALOG_FILE, "r") as f:
+            return json.load(f)
     except:
-        return {}
+        return []
 
-def update_case_status(case_id, new_status):
-    try:
-        with open(DB_FILE, "r") as f:
-            data = json.load(f)
-        
-        for case in data:
-            if case["id"] == case_id:
-                case["status"] = new_status
-                
-        with open(DB_FILE, "w") as f:
-            json.dump(data, f, indent=2)
-    except Exception as e:
-        print(f"DB Error: {e}")
+CATALOG = load_catalog()
 
-# 3. MURF VOICE (Authoritative)
+# 3. HELPER: MURF VOICE
 def generate_murf_speech(text):
     MURF_API_KEY = os.getenv('MURF_AI_API_KEY')
-    voice_id = "en-US-marcus" 
+    # Using 'en-US-ken' for a friendly, quick-service vibe
+    voice_id = "en-US-ken"
     
     url = "https://api.murf.ai/v1/speech/generate"
     headers = {"api-key": MURF_API_KEY, "Content-Type": "application/json"}
     payload = {
         "text": text,
         "voice_id": voice_id,
-        "style": "Promo",
+        "style": "Conversational",
         "multiNativeLocale": "en-US"
     }
     
@@ -72,23 +56,17 @@ def generate_murf_speech(text):
 
 @router.get("/health")
 async def health_check():
-    return HTMLResponse(content="<h1>Fraud Alert System Active 🔒</h1>", status_code=200)
+    return HTMLResponse(content="<h1>Blinkit Voice Agent 🛍️</h1>", status_code=200)
 
 @router.post("/start-session")
 async def start_session():
-    case = get_active_case()
-    if not case:
-        return JSONResponse(content={"text": "No active alerts."})
-
-    greeting = f"This is an urgent call from HDFC Bank Fraud Detection. Am I speaking with {case['userName']}?"
-    
+    greeting = "Hi! Welcome to Blinkit Voice. I can help you order groceries or even ingredients for a full meal. What can I get for you?"
     return JSONResponse(content={
         "text": greeting,
-        "audioUrl": generate_murf_speech(greeting),
-        "case_data": case 
+        "audioUrl": generate_murf_speech(greeting)
     })
 
-# --- MAIN FRAUD AGENT LOGIC ---
+# --- MAIN GROCERY AGENT LOGIC ---
 @router.post("/chat-with-voice")
 async def chat_with_voice(
     file: UploadFile = File(...), 
@@ -101,69 +79,45 @@ async def chat_with_voice(
         try:
             state = json.loads(current_state)
         except:
-            state = {"verification_stage": "unverified", "case_status": "pending"}
-
-        # Get the actual DB record
-        case_record = get_active_case()
-        REQUIRED_DIGITS = case_record['cardEnding'] # "4242"
+            state = {"cart": [], "total_price": 0, "is_complete": False}
 
         # B. TRANSCRIBE
         audio_data = await file.read()
         transcriber = aai.Transcriber()
         transcript = transcriber.transcribe(audio_data)
         user_text = transcript.text or ""
-        print(f"🔒 User Said: {user_text}")
+        print(f"🛒 User: {user_text}")
 
-        # --- C. STRICT SECURITY GATE (PYTHON LOGIC) ---
-        # We override the LLM if the verification is incorrect.
+        # C. INTELLIGENT AGENT (Gemini)
+        # We give the LLM the entire catalog so it can "pick" the right items.
         
-        system_override = ""
-        
-        if state["verification_stage"] == "unverified":
-            # Check if user text contains the required digits
-            # We handle "4242", "4 2 4 2", "four two four two" logic vaguely here, 
-            # but strictly checking for the number is safest.
-            if REQUIRED_DIGITS in user_text.replace(" ", ""):
-                print("✅ SECURITY PASS: Correct Digits Detected")
-                state["verification_stage"] = "verified"
-                system_override = "User PASSED verification. The state is now VERIFIED. Read the transaction details immediately."
-            else:
-                print("❌ SECURITY FAIL: Incorrect Digits")
-                # We force the LLM to reject it
-                system_override = f"User FAILED verification. They did NOT say {REQUIRED_DIGITS}. You MUST politely ask them to repeat the last 4 digits. Do NOT proceed."
-
-        # D. SECURITY BRAIN (Gemini)
         system_prompt = f"""
-        You are a Senior Fraud Analyst at HDFC Bank.
+        You are a friendly Blinkit Voice Assistant.
         
-        CASE FILE:
-        {json.dumps(case_record)}
+        STORE CATALOG:
+        {json.dumps(CATALOG)}
         
-        CURRENT STATE:
-        Verification Stage: {state.get('verification_stage')}
-        Case Status: {state.get('case_status')}
+        CURRENT CART:
+        {json.dumps(state['cart'])}
         
         USER SAID: "{user_text}"
         
-        SYSTEM OVERRIDE INSTRUCTION: {system_override}
-        
-        PROTOCOL:
-        1. If 'verification_stage' is 'unverified': 
-           - Ask for last 4 digits of card ending in {case_record['cardEnding']}.
-           - Do NOT discuss the transaction until verified.
-        
-        2. If 'verification_stage' is 'verified':
-           - State: "I see a transaction at {case_record['transactionName']} for {case_record['transactionAmount']}. Did you authorize this?"
-           - If User says YES: Mark 'safe'.
-           - If User says NO: Mark 'fraudulent'.
+        GOALS:
+        1. **Understand Intent:** Does the user want a specific item OR ingredients for a dish?
+        2. **Smart Add:** - If user says "Milk", add Milk.
+           - If user says "Ingredients for a sandwich", look at TAGS and add Bread + Peanut Butter (or Cheese).
+           - If user says "Ingredients for Pasta", add Pasta + Sauce + Cheese.
+        3. **Manage Cart:** Update quantities if asked. Remove if asked.
+        4. **Checkout:** If user says "That's all" or "Place order", set 'is_complete' to true.
         
         OUTPUT FORMAT (JSON ONLY):
         {{
-            "updated_state": {{
-                "verification_stage": "unverified" | "verified",
-                "case_status": "pending" | "safe" | "fraudulent"
-            }},
-            "reply": "Spoken response"
+            "updated_cart": [
+                {{ "id": "101", "name": "Milk", "price": 27, "qty": 2 }}
+            ],
+            "total_price": number,
+            "is_complete": boolean,
+            "reply": "Spoken response confirming what was added."
         }}
         """
 
@@ -173,24 +127,38 @@ async def chat_with_voice(
         )
         
         ai_resp = json.loads(result.text)
-        new_state = ai_resp["updated_state"]
+        new_cart = ai_resp["updated_cart"]
+        total_price = ai_resp["total_price"]
+        is_complete = ai_resp["is_complete"]
         agent_reply = ai_resp["reply"]
         
-        print(f"🛡️ Analyst: {agent_reply}")
+        print(f"🛍️ Blinkit: {agent_reply}")
 
-        # E. UPDATE DATABASE
-        if new_state["case_status"] != "pending":
-            update_case_status(case_record["id"], new_state["case_status"])
-            print(f"✅ Case {case_record['id']} marked as {new_state['case_status']}")
+        # D. SAVE ORDER (If Complete)
+        if is_complete:
+            order_entry = {
+                "timestamp": datetime.now().isoformat(),
+                "order_details": new_cart,
+                "total": total_price,
+                "status": "placed"
+            }
+            # Save to a generic 'orders.json'
+            with open("orders.json", "a") as f:
+                f.write(json.dumps(order_entry) + "\n")
+            print("✅ Order Placed!")
 
-        # F. AUDIO
+        # E. AUDIO
         audio_url = generate_murf_speech(agent_reply)
 
         return {
             "user_transcript": user_text,
             "ai_text": agent_reply,
             "audio_url": audio_url,
-            "updated_state": new_state
+            "updated_state": {
+                "cart": new_cart,
+                "total_price": total_price,
+                "is_complete": is_complete
+            }
         }
 
     except Exception as e:
